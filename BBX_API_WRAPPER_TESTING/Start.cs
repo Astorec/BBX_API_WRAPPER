@@ -27,7 +27,7 @@ namespace BBX_API_WRAPPER
             var response = await client.GetAsync("http://localhost:3000/tournaments");
 
             Console.WriteLine(response.StatusCode);
-         
+
             await GetAllTournaments();
 
             await GetTournamentById(11);
@@ -40,6 +40,8 @@ namespace BBX_API_WRAPPER
             await GetMatches();
             await GetAlllPlayer();
             await GetPlayerByUsername();
+
+            await GetMatchDataWithNames();
         }
 
 
@@ -51,7 +53,7 @@ namespace BBX_API_WRAPPER
 
             foreach (var t in tournaments)
             {
-                Console.WriteLine(t.name);
+                Console.WriteLine(t.Name);
             }
 
             // Get random tournament ID for testing
@@ -67,26 +69,26 @@ namespace BBX_API_WRAPPER
         public async Task GetTournamentById(int id)
         {
             var tournament = await tournamentClient.GetTournamentById(id);
-            bool isStoreChamp = tournament.is_store_championship == 1 ? true : false;
+            bool isStoreChamp = tournament.IsStoreChampionship == 1 ? true : false;
             Console.WriteLine("\n--------------------Get By ID---------------------\n" +
-                $"Name: {tournament.name} Participants: {tournament.participants} Is Store Champ: {isStoreChamp}");
+                $"Name: {tournament.Name} Participants: {tournament.Participants} Is Store Champ: {isStoreChamp}");
         }
 
         public async Task GetTournamentByUrl(string url)
         {
             var tournament = await tournamentClient.GetTournamentByUrl(url);
 
-            bool isStoreChamp = tournament.is_store_championship == 1 ? true : false;
+            bool isStoreChamp = tournament.IsStoreChampionship == 1 ? true : false;
 
             Console.WriteLine($"\n--------------------Get By Url: {url} ---------------------\n" +
-                $"Name: {tournament.name} Participants: {tournament.participants} Is Store Champ: {isStoreChamp}");
+                $"Name: {tournament.Name} Participants: {tournament.Participants} Is Store Champ: {isStoreChamp}");
 
         }
 
         public async Task GetParticipants()
         {
-            var participants = await tournamentClient.GetAllParticipants(testDataTournament.id);
-            Console.WriteLine($"\n--------------------Get Participants for tournament - {testDataTournament.name} ---------------------\n");
+            var participants = await tournamentClient.GetAllParticipants(testDataTournament.Id);
+            Console.WriteLine($"\n--------------------Get Participants for tournament - {testDataTournament.Name} ---------------------\n");
             if (participants == null || participants.Count() == 0)
             {
                 Console.WriteLine("No participants found.");
@@ -100,9 +102,9 @@ namespace BBX_API_WRAPPER
 
         public async Task GetMatches()
         {
-            var matches = await tournamentClient.GetAllMatches(testDataTournament.id);
-            Console.WriteLine($"\n--------------------Get Matches for tournament - {testDataTournament.name} ---------------------\n");
-            if(matches == null || matches.Count() == 0)
+            var matches = await tournamentClient.GetAllMatches(testDataTournament.Id);
+            Console.WriteLine($"\n--------------------Get Matches for tournament - {testDataTournament.Name} ---------------------\n");
+            if (matches == null || matches.Count() == 0)
             {
                 Console.WriteLine("No matches found.");
                 return;
@@ -131,5 +133,61 @@ namespace BBX_API_WRAPPER
             var player = await playerClient.GetPlayerByUsername("Astorec");
             Console.WriteLine($"Player ID: {player.Id} Name: {player.Name} Username: {player.Username}");
         }
+
+        public async Task GetMatchDataWithNames()
+        {
+            Console.WriteLine($"\n--------------------Get Match Data for {testDataTournament.Name} URL: {testDataTournament.Url}---------------------\n");
+
+            var matches = await tournamentClient.GetAllMatches(testDataTournament.Id);
+            var participants = await tournamentClient.GetAllParticipants(testDataTournament.Id);
+
+            // Cache all player data in one call to avoid repeated GetPlayerById requests
+            var allPlayers = await playerClient.GetAllPlayers();
+            var playerLookup = allPlayers.ToDictionary(p => p.Id);
+
+            Dictionary<int, Match> groupStageMatches = new();
+            Dictionary<int, Match> finalStageMatches = new();
+
+            foreach (var m in matches)
+            {
+                if (participants.Any(p => p.GroupId == m.Player1Id))
+                    groupStageMatches[m.Id] = m;
+                else if (participants.Any(p => p.PlayerId == m.Player1Id))
+                    finalStageMatches[m.Id] = m;
+            }
+
+            Console.WriteLine($"\n--------------------Group Stage---------------------\n");
+            foreach (var gMatch in groupStageMatches)
+            {
+                var p1 = participants.FirstOrDefault(p => p.GroupId == gMatch.Value.Player1Id);
+                var p2 = participants.FirstOrDefault(p => p.GroupId == gMatch.Value.Player2Id);
+
+                var player1Name = p1 != null && playerLookup.TryGetValue(p1.PlayerDBId, out var player1)
+                    ? !string.IsNullOrWhiteSpace(player1.Username) ? player1.Username : player1.Name
+                    : "Unknown";
+                var player2Name = p2 != null && playerLookup.TryGetValue(p2.PlayerDBId, out var player2)
+                    ? !string.IsNullOrWhiteSpace(player2.Username) ? player2.Username : player2.Name
+                    : "Unknown";
+
+                Console.WriteLine($"[Group Stage] Match ID: {gMatch.Value.Id} Player 1: {player1Name} vs Player 2: {player2Name} Winner ID: {gMatch.Value.WinnerId}");
+            }
+
+            Console.WriteLine($"\n--------------------Finals Stage---------------------\n");
+            foreach (var fMatch in finalStageMatches)
+            {
+                var p1 = participants.FirstOrDefault(p => p.PlayerId == fMatch.Value.Player1Id);
+                var p2 = participants.FirstOrDefault(p => p.PlayerId == fMatch.Value.Player2Id);
+
+                var player1Name = p1 != null && playerLookup.TryGetValue(p1.PlayerDBId, out var player1)
+                    ? !string.IsNullOrWhiteSpace(player1.Username) ? player1.Username : player1.Name
+                    : "Unknown";
+                var player2Name = p2 != null && playerLookup.TryGetValue(p2.PlayerDBId, out var player2)
+                    ? !string.IsNullOrWhiteSpace(player2.Username) ? player2.Username : player2.Name
+                    : "Unknown";
+
+                Console.WriteLine($"[Final Stage] Match ID: {fMatch.Value.Id} Player 1: {player1Name} vs Player 2: {player2Name} Winner ID: {fMatch.Value.WinnerId}");
+            }
+        }
+
     }
 }

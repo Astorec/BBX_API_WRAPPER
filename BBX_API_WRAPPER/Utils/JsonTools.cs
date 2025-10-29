@@ -63,6 +63,7 @@ namespace BBX_API_WRAPPER.Utils
                 var jsonContent = await GetResponse(enpoint).Result.Content.ReadAsStringAsync();
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var items = JsonSerializer.Deserialize<IEnumerable<T>>(jsonContent, options);
+
                 return items ?? Enumerable.Empty<T>();
             }
             catch (HttpRequestException ex)
