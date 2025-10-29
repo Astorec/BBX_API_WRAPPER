@@ -8,6 +8,7 @@ namespace BBX_API_WRAPPER
     {
         HttpClientHandler handler = new();
         TournamentClient tournamentClient;
+        PlayerClient playerClient;
         Tournament testDataTournament;
         public async Task StartTask()
         {
@@ -20,6 +21,7 @@ namespace BBX_API_WRAPPER
 
             var client = new HttpClient(handler);
             tournamentClient = new TournamentClient(client);
+            playerClient = new PlayerClient(client);
 
 
             var response = await client.GetAsync("http://localhost:3000/tournaments");
@@ -30,12 +32,14 @@ namespace BBX_API_WRAPPER
 
             await GetTournamentById(11);
 
-            await GetTournamentByUrl("https://worldbeyblade.challonge.com/ij1pgt0i");
+            await GetTournamentByUrl("https://worldbeyblade.challonge.com/73kq22og");
 
-            await GetTournamentByUrl("https://challonge.com/54mhvidn");
+            await GetTournamentByUrl("https://challonge.com/frsasyrq");
 
             await GetParticipants();
             await GetMatches();
+            await GetAlllPlayer();
+            await GetPlayerByUsername();
         }
 
 
@@ -108,6 +112,24 @@ namespace BBX_API_WRAPPER
             {
                 Console.WriteLine($"Match ID: {m.Id} Player 1 ID: {m.Player1Id} Player 2 ID: {m.Player2Id} Winner ID: {m.WinnerId}");
             }
+        }
+
+        public async Task GetAlllPlayer()
+        {
+            var players = await playerClient.GetAllPlayers();
+
+            Console.WriteLine($"\n--------------------Get All Players---------------------\n");
+            foreach (var p in players)
+            {
+                Console.WriteLine($"Player ID: {p.Id} Name: {p.Name} Username: {p.Username}");
+            }
+        }
+
+        public async Task GetPlayerByUsername()
+        {
+            Console.WriteLine($"\n--------------------Get Player Astorec---------------------\n");
+            var player = await playerClient.GetPlayerByUsername("Astorec");
+            Console.WriteLine($"Player ID: {player.Id} Name: {player.Name} Username: {player.Username}");
         }
     }
 }

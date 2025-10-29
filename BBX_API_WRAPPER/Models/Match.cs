@@ -23,8 +23,9 @@ namespace BBX_API_WRAPPER.Models
         [Required]
         public int MatchId { get; set; }
 
+        // This is only null as some data is missing from older tournaments
         [Required]
-        public int Round { get; set; }
+        public int? Round { get; set; }
 
         public int? Player1Score { get; set; }
         public int? Player2Score { get; set; }

@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using BBX_API_WRAPPER.Interfaces;
 using BBX_API_WRAPPER.Models;
+using BBX_API_WRAPPER.Utils;
 
 namespace BBX_API_WRAPPER.Clients
 {
@@ -13,11 +14,7 @@ namespace BBX_API_WRAPPER.Clients
 
         // make this assignable from constructors
         private string _urlBase;
-
-        // Add parameterless ctor for local dev that ignores SSL by default
-        public TournamentClient() : this(ignoreSslForLocalhost: true)
-        {
-        }
+        private JsonTools _jsonTools;
 
         // existing ctor (preserves behavior when you pass an already-configured HttpClient)
         public TournamentClient(HttpClient client)
@@ -26,34 +23,7 @@ namespace BBX_API_WRAPPER.Clients
             // normalize: no trailing slash
             _urlBase = "http://localhost:3000/tournaments";
 
-
-        }
-
-        // new ctor: creates an HttpClient that (optionally) ignores SSL errors for local development
-        // Usage: new TournamentClient(ignoreSslForLocalhost: true)
-        public TournamentClient(bool ignoreSslForLocalhost)
-        {
-            var handler = new HttpClientHandler();
-
-            if (ignoreSslForLocalhost)
-            {
-                // Accept any server certificate (insecure—use only for local dev)
-                handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-            }
-
-            _client = new HttpClient(handler);
-            _urlBase = "http://localhost:3000/tournaments";
-        }
-
-        // new ctor: allow explicit base URL and optionally ignore SSL (or use http)
-        public TournamentClient(string baseUrl, bool ignoreSsl = false)
-        {
-            if (string.IsNullOrWhiteSpace(baseUrl))
-                throw new ArgumentException("baseUrl must be provided", nameof(baseUrl));
-
-
-            // plain HTTP; handler not needed
-            _client = new HttpClient();
+            _jsonTools = new JsonTools(_client, _urlBase);
         }
 
         #region Tournament Details
@@ -61,16 +31,7 @@ namespace BBX_API_WRAPPER.Clients
         {
             try
             {
-                var response = await _client.GetAsync(_urlBase);
-
-                response.EnsureSuccessStatusCode();
-
-                var jsonContent = await response.Content.ReadAsStringAsync();
-
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var tournaments = JsonSerializer.Deserialize<IEnumerable<Tournament>>(jsonContent, options);
-
-                return tournaments ?? Enumerable.Empty<Tournament>();
+               return await _jsonTools.GetList<Tournament>();
             }
             catch (HttpRequestException ex)
             {
@@ -79,26 +40,27 @@ namespace BBX_API_WRAPPER.Clients
                     $"Failed connecting to '{_urlBase}'. If this is a local dev server try using 'http://' or pass a constructor with ignoreSsl=true for testing. Inner: {ex.Message}",
                     ex);
             }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error retrieving tournaments from '{_urlBase}'. Inner: {ex.Message}", ex);
+            }
         }
 
         public async Task<Tournament> GetTournamentById(int id)
         {
             try
             {
-                var response = await _client.GetAsync($"{_urlBase}/{id}");
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var tournament = JsonSerializer.Deserialize<Tournament>(json, options);
-
-                return tournament!;
+              return await _jsonTools.GetItem<Tournament>($"/{id}");
             }
             catch (HttpRequestException ex)
             {
                 throw new HttpRequestException(
                     $"Failed connecting to '{_urlBase}/{id}'. If this is a local dev server try using 'http://' or pass a constructor with ignoreSsl=true for testing. Inner: {ex.Message}",
                     ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error retrieving tournament id '{id}' from '{_urlBase}'. Inner: {ex.Message}", ex);
             }
         }
 
@@ -122,14 +84,8 @@ namespace BBX_API_WRAPPER.Clients
                     lastSegment = $"{subdomain}-{lastSegment}";
                 }
             }
-
-            var response = await _client.GetAsync($"{_urlBase}/url/{lastSegment}");
-            response.EnsureSuccessStatusCode();
-
-            var json = await response.Content.ReadAsStringAsync();
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var tournament = JsonSerializer.Deserialize<Tournament>(json, options);
-            return tournament!;
+            
+            return await _jsonTools.GetItem<Tournament>($"/url/{lastSegment}");
         }
 
         public Task CreateNewTournament(Tournament tournament)
@@ -144,15 +100,7 @@ namespace BBX_API_WRAPPER.Clients
         {
             try
             {
-                var resposne = await _client.GetAsync($"{_urlBase}/{tournamentId}/participants");
-
-                resposne.EnsureSuccessStatusCode();
-
-                var json = await resposne.Content.ReadAsStringAsync();
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var participants = JsonSerializer.Deserialize<IEnumerable<Participant>>(json, options);
-
-                return participants!;
+                return await _jsonTools.GetList<Participant>($"/{tournamentId}/participants");
             }
             catch (HttpRequestException ex)
             {
@@ -179,15 +127,7 @@ namespace BBX_API_WRAPPER.Clients
         {
             try
             {
-                var resposne = await _client.GetAsync($"{_urlBase}/{tournamentId}/matches");
-
-                resposne.EnsureSuccessStatusCode();
-
-                var json = await resposne.Content.ReadAsStringAsync();
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var matches = JsonSerializer.Deserialize<IEnumerable<Match>>(json, options);
-
-                return matches!;
+                return await _jsonTools.GetList<Match>($"/{tournamentId}/matches");
             }
             catch (HttpRequestException ex)
             {
