@@ -9,6 +9,7 @@ namespace BBX_API_WRAPPER
         HttpClientHandler handler = new();
         TournamentClient tournamentClient;
         PlayerClient playerClient;
+        LeaderboardClient leaderboardClient;
         Tournament testDataTournament;
         public async Task StartTask()
         {
@@ -22,26 +23,32 @@ namespace BBX_API_WRAPPER
             var client = new HttpClient(handler);
             tournamentClient = new TournamentClient(client);
             playerClient = new PlayerClient(client);
+            leaderboardClient = new LeaderboardClient(client);
 
 
             var response = await client.GetAsync("http://localhost:3000/tournaments");
 
             Console.WriteLine(response.StatusCode);
 
-            await GetAllTournaments();
+            //await GetAllTournaments();
 
-            await GetTournamentById(11);
+            //await GetTournamentById(11);
 
-            await GetTournamentByUrl("https://worldbeyblade.challonge.com/73kq22og");
+            //await GetTournamentByUrl("https://worldbeyblade.challonge.com/73kq22og");
 
-            await GetTournamentByUrl("https://challonge.com/frsasyrq");
+            //await GetTournamentByUrl("https://challonge.com/frsasyrq");
 
-            await GetParticipants();
-            await GetMatches();
-            await GetAlllPlayer();
-            await GetPlayerByUsername();
+            //await GetParticipants();
+            //await GetMatches();
+            //await GetAlllPlayer();
+            //await GetPlayerByUsername();
 
-            await GetMatchDataWithNames();
+            //await GetMatchDataWithNames();
+
+            //await GetLeaderboard();
+
+            await AddGetUpdateDeleteNewTournament();
+
         }
 
 
@@ -189,5 +196,71 @@ namespace BBX_API_WRAPPER
             }
         }
 
+        public async Task GetLeaderboard()
+        {
+            Console.WriteLine($"\n--------------------Main Board---------------------\n");
+            var leaderboard = await leaderboardClient.GetMainBoard();
+
+            // Print table header
+            Console.WriteLine(
+                $"{"Rank",-6} {"Name",-20} {"Score",-8} {"Win %",-8} {"Region",-10}");
+
+            Console.WriteLine(new string('-', 60));
+
+            // Print each row
+            foreach (var lb in leaderboard)
+            {
+                Console.WriteLine(
+                    $"{lb.PlayerRank,-6} {lb.DisplayName,-20} {lb.TotalScore,-8} {lb.TotalWinPercentage,-8} {lb.Region,-10}");
+            }
+        }
+
+        public async Task AddGetUpdateDeleteNewTournament()
+        {
+            Console.WriteLine($"\n--------------------Adding new Tournament---------------------\n");
+
+            var newTournament = new Tournament
+            {
+                Name = "Test Tournament",
+                Url = "test_tournament",
+                Participants = 16,
+                IsSideEvent = 0,
+                Region = 1,
+                IsStoreChampionship = 1,
+                AttendanceId = 3,
+                Finalized = 0,
+                State = "pending"
+            };
+
+            await tournamentClient.CreateNewTournament(newTournament);
+            Console.WriteLine("Added new tournament.");
+
+            Console.WriteLine($"\n--------------------Get new Tournament Details---------------------\n");
+
+            var tournamnet = await tournamentClient.GetTournamentByUrl("test_tournament");
+
+            Console.WriteLine($"Name: {tournamnet.Name} Participants: {tournamnet.Participants} Is Store Champ: {tournamnet.IsStoreChampionship}");
+
+            Console.WriteLine($"\n--------------------Check DB that it was added correctly then Press Enter to continue---------------------\n");
+            Console.ReadLine();
+
+
+            Console.WriteLine($"\n--------------------Updating Tournament---------------------\n");
+            tournamnet.Participants = 32;
+            await tournamentClient.UpdateTournament(tournamnet.Id, tournamnet);
+
+            Console.WriteLine($"\n--------------------Get updated Tournament Details---------------------\n");
+            var updatedTournamnet = await tournamentClient.GetTournamentByUrl("test_tournament");
+            Console.WriteLine($"Name: {updatedTournamnet.Name} Participants: {updatedTournamnet.Participants} Is Store Champ: {updatedTournamnet.IsStoreChampionship}");
+            Console.WriteLine($"\n--------------------Check DB that it was updated correctly then Press Enter to continue---------------------\n");
+            Console.ReadLine();
+
+            Console.WriteLine($"\n--------------------Deleting new Tournament---------------------\n");
+            await tournamentClient.DeleteTournament(tournamnet.Id);
+
+
+            Console.WriteLine($"\n--------------------Check DB that it was removed then Press Enter to continue---------------------\n");
+            Console.ReadLine();
+        }
     }
 }

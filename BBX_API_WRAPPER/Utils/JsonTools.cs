@@ -98,5 +98,88 @@ namespace BBX_API_WRAPPER.Utils
                     ex);
             }
         }
+   
+        public async Task <T>PostItem<T>(string endpoint, T item)
+        {
+            try
+            {
+                var jsonContent = new StringContent(JsonSerializer.Serialize(item), Encoding.UTF8, "application/json");
+                var response = await _client.PostAsync($"{_urlBase}{endpoint}", jsonContent);
+                response.EnsureSuccessStatusCode();
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var createdItem = JsonSerializer.Deserialize<T>(responseContent, options);
+                return createdItem!;
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new HttpRequestException(
+                    $"Failed posting item to '{_urlBase}/{endpoint}'. Inner: {ex.Message}",
+                    ex);
+            }
+        }
+
+        public async Task PostList<T>(string endpoint, IEnumerable<T> items)
+        {
+            try
+            {
+                var jsonContent = new StringContent(JsonSerializer.Serialize(items), Encoding.UTF8, "application/json");
+                var response = await _client.PostAsync($"{_urlBase}{endpoint}", jsonContent);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new HttpRequestException(
+                    $"Failed posting list to '{_urlBase}/{endpoint}'. Inner: {ex.Message}",
+                    ex);
+            }
+        }
+
+        public async Task DeleteItem(string endpoint)
+        {
+            try
+            {
+                var response = await _client.DeleteAsync($"{_urlBase}{endpoint}");
+                response.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new HttpRequestException(
+                    $"Failed deleting item at '{_urlBase}/{endpoint}'. Inner: {ex.Message}",
+                    ex);
+            }
+        }
+
+        public async Task PutItem<T>(string endpoint, T item)
+        {
+            try
+            {
+                var jsonContent = new StringContent(JsonSerializer.Serialize(item), Encoding.UTF8, "application/json");
+                var response = await _client.PutAsync($"{_urlBase}{endpoint}", jsonContent);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new HttpRequestException(
+                    $"Failed putting item to '{_urlBase}/{endpoint}'. Inner: {ex.Message}",
+                    ex);
+            }
+        }
+
+        public async Task PutList<T>(string endpoint, IEnumerable<T> items)
+        {
+            try
+            {
+                var jsonContent = new StringContent(JsonSerializer.Serialize(items), Encoding.UTF8, "application/json");
+                var response = await _client.PutAsync($"{_urlBase}{endpoint}", jsonContent);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new HttpRequestException(
+                    $"Failed putting list to '{_urlBase}/{endpoint}'. Inner: {ex.Message}",
+                    ex);
+            }
+        }
     }
 }

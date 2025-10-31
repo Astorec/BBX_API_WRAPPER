@@ -24,7 +24,50 @@ namespace BBX_API_WRAPPER.Clients
 
         public Task AddNewPlayer(Player player)
         {
-            throw new NotImplementedException();
+            try
+            {
+                return _jsonTools.PostItem<Player>("/add", player);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error adding new player: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error adding player to '{_urlBase}/add'. Inner: {ex.Message}", ex);
+            }
+        }
+
+        public async Task RemovePlayer(int playerId)
+        {
+            try
+            {
+               await _jsonTools.DeleteItem($"/delete/{playerId}");
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error removing player with ID {playerId}: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error deleting player from '{_urlBase}/delete/{playerId}'. Inner: {ex.Message}", ex);
+            }
+        }
+
+        public async Task UpdatePlayer(Player player)
+        {
+            try
+            {
+                await _jsonTools.PutItem($"/update/{player.Id}", player);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error updating player with ID {player.Id}: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error updating player at '{_urlBase}/update/{player.Id}'. Inner: {ex.Message}", ex);
+            }
         }
 
         public Task<IEnumerable<Player>> GetAllPlayers()

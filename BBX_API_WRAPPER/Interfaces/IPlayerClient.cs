@@ -35,5 +35,19 @@ namespace BBX_API_WRAPPER.Interfaces
         /// <param name="player"></param>
         /// <returns></returns>
         Task AddNewPlayer(Player player);
+
+        /// <summary>
+        /// DELETE players/delete/{playerId}
+        /// </summary>
+        /// <param name="playerId"></param>
+        /// <returns></returns>
+        Task RemovePlayer(int playerId);
+
+        /// <summary>
+        /// PUT players/update/{playerId}
+        /// </summary>
+        /// <param name="player"></param>
+        /// <returns></returns>
+        Task UpdatePlayer(Player player);
     }
 }
