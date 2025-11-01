@@ -38,6 +38,22 @@ namespace BBX_API_WRAPPER.Clients
             }
         }
 
+        public Task AddNewPlayers(IEnumerable<Player> players)
+        {
+            try
+            {
+                return _jsonTools.PostList<Player>("/add", players);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error adding new players: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error adding players to '{_urlBase}/add'. Inner: {ex.Message}", ex);
+            }
+        }
+
         public async Task RemovePlayer(int playerId)
         {
             try

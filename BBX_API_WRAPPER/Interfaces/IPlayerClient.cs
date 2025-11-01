@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BBX_API_WRAPPER.Interfaces
 {
-    internal interface IPlayerClient
+    public interface IPlayerClient
     {
         /// <summary>
         /// GET players/
@@ -35,6 +35,13 @@ namespace BBX_API_WRAPPER.Interfaces
         /// <param name="player"></param>
         /// <returns></returns>
         Task AddNewPlayer(Player player);
+
+        /// <summary>
+        /// POST players/add
+        /// </summary>
+        /// <param name="players"></param>
+        /// <returns></returns>
+        Task AddNewPlayers(IEnumerable<Player> players);
 
         /// <summary>
         /// DELETE players/delete/{playerId}

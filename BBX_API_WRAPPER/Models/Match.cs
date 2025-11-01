@@ -33,10 +33,10 @@ namespace BBX_API_WRAPPER.Models
         [JsonPropertyName("round")]
         public int? Round { get; set; }
 
-        [JsonPropertyName("player1_score")]
+        [JsonPropertyName("p1_score")]
         public int? Player1Score { get; set; }
 
-        [JsonPropertyName("player2_score")]
+        [JsonPropertyName("p2_score")]
         public int? Player2Score { get; set; }
     }
 }

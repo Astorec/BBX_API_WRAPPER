@@ -94,7 +94,7 @@ namespace BBX_API_WRAPPER.Utils
             catch (HttpRequestException ex)
             {
                 throw new HttpRequestException(
-                    $"Failed retrieving item from '{_urlBase}/{endpoint}'. Inner: {ex.Message}",
+                    $"Failed retrieving item from '{_urlBase}{endpoint}'. Inner: {ex.Message}",
                     ex);
             }
         }
@@ -114,7 +114,7 @@ namespace BBX_API_WRAPPER.Utils
             catch (HttpRequestException ex)
             {
                 throw new HttpRequestException(
-                    $"Failed posting item to '{_urlBase}/{endpoint}'. Inner: {ex.Message}",
+                    $"Failed posting item to '{_urlBase}{endpoint}'. Inner: {ex.Message}",
                     ex);
             }
         }
@@ -130,7 +130,7 @@ namespace BBX_API_WRAPPER.Utils
             catch (HttpRequestException ex)
             {
                 throw new HttpRequestException(
-                    $"Failed posting list to '{_urlBase}/{endpoint}'. Inner: {ex.Message}",
+                    $"Failed posting list to '{_urlBase}{endpoint}'. Inner: {ex.Message}",
                     ex);
             }
         }
@@ -145,7 +145,7 @@ namespace BBX_API_WRAPPER.Utils
             catch (HttpRequestException ex)
             {
                 throw new HttpRequestException(
-                    $"Failed deleting item at '{_urlBase}/{endpoint}'. Inner: {ex.Message}",
+                    $"Failed deleting item at '{_urlBase}{endpoint}'. Inner: {ex.Message}",
                     ex);
             }
         }
@@ -154,6 +154,9 @@ namespace BBX_API_WRAPPER.Utils
         {
             try
             {
+                var json = JsonSerializer.Serialize(item);
+                Console.WriteLine(json);
+
                 var jsonContent = new StringContent(JsonSerializer.Serialize(item), Encoding.UTF8, "application/json");
                 var response = await _client.PutAsync($"{_urlBase}{endpoint}", jsonContent);
                 response.EnsureSuccessStatusCode();
@@ -161,7 +164,7 @@ namespace BBX_API_WRAPPER.Utils
             catch (HttpRequestException ex)
             {
                 throw new HttpRequestException(
-                    $"Failed putting item to '{_urlBase}/{endpoint}'. Inner: {ex.Message}",
+                    $"Failed putting item to '{_urlBase}{endpoint}'. Inner: {ex.Message}",
                     ex);
             }
         }
@@ -177,7 +180,7 @@ namespace BBX_API_WRAPPER.Utils
             catch (HttpRequestException ex)
             {
                 throw new HttpRequestException(
-                    $"Failed putting list to '{_urlBase}/{endpoint}'. Inner: {ex.Message}",
+                    $"Failed putting list to '{_urlBase}{endpoint}'. Inner: {ex.Message}",
                     ex);
             }
         }

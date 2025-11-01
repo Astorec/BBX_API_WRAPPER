@@ -58,7 +58,15 @@ namespace BBX_API_WRAPPER.Interfaces
         /// <param name="tournamentId"></param>
         /// <param name="playerDbId"></param>
         /// <returns></returns>
-        Task<Participant> GetParticipantByPlayerDbId(int tournamentId, int playerDbId);
+        Task<Participant> GetParticipantByPlayerDbId(int playerDbId);
+
+        /// <summary>
+        /// GET tournaments/{tournamentId}/participants/player/{playerId}
+        /// </summary>
+        /// <param name="tournamentId"></param>
+        /// <param name="playerId"></param>
+        /// <returns></returns>
+        Task<Participant> GetParticipantInTournament(int tournamentId, int playerId);
 
         /// <summary>
         /// POST tournaments/{tournamentId}/participants/add
@@ -145,6 +153,7 @@ namespace BBX_API_WRAPPER.Interfaces
 
         #endregion
 
+        #region TournamentData Details
         /// <summary>
         /// GET tournaments/{tournamentId}/data
         /// We send in the tournament ID so that we don't get everything in the system
@@ -199,7 +208,6 @@ namespace BBX_API_WRAPPER.Interfaces
         /// <returns></returns>
         Task RemovePlayerTournamentData(int tournamentId, int playerDbId);
 
-        #region TournamentData Details
 
         #endregion
     }

@@ -162,21 +162,39 @@ namespace BBX_API_WRAPPER.Clients
             }
         }
 
-        public async Task<Participant> GetParticipantByPlayerDbId(int tournamentId, int playerDbId)
+        public async Task<Participant> GetParticipantByPlayerDbId(int playerDbId)
         {
             try
             {
-                return await _jsonTools.GetItem<Participant>($"/{tournamentId}/participants/player/{playerDbId}");
+                return await _jsonTools.GetItem<Participant>($"/participants/player/{playerDbId}");
             }
             catch (HttpRequestException ex)
             {
                 throw new HttpRequestException(
-                    $"Failed connecting to '{_urlBase}/{tournamentId}/participants/player/{playerDbId}'. If this is a local dev server try using 'http://' or pass a constructor with ignoreSsl=true for testing. Inner: {ex.Message}",
+                    $"Failed connecting to '{_urlBase}/participants/player/{playerDbId}'. If this is a local dev server try using 'http://' or pass a constructor with ignoreSsl=true for testing. Inner: {ex.Message}",
                     ex);
             }
             catch (Exception ex)
             {
-                throw new Exception($"Unexpected error retrieving participant with playerDbId '{playerDbId}' from tournament id '{tournamentId}' at '{_urlBase}/{tournamentId}/participants/player/{playerDbId}'. Inner: {ex.Message}", ex);
+                throw new Exception($"Unexpected error retrieving participant with playerDbId '{playerDbId}' at '{_urlBase}/participants/player/{playerDbId}'. Inner: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<Participant> GetParticipantInTournament(int  tournamentId, int playerId)
+        {
+            try
+            {
+                return await _jsonTools.GetItem<Participant>($"/{tournamentId}/participants/player/{playerId}");
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new HttpRequestException(
+                    $"Failed connecting to '{_urlBase}/{tournamentId}/participants/id/{playerId}'. If this is a local dev server try using 'http://' or pass a constructor with ignoreSsl=true for testing. Inner: {ex.Message}",
+                    ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error retrieving participant with playerId '{playerId}' from tournament id '{tournamentId}' at '{_urlBase}/{tournamentId}/participants/id/{playerId}'. Inner: {ex.Message}", ex);
             }
         }
 
@@ -207,12 +225,12 @@ namespace BBX_API_WRAPPER.Clients
             catch (HttpRequestException ex)
             {
                 throw new HttpRequestException(
-                    $"Failed connecting to '{_urlBase}/{tournamentId}/participants/add-batch'. If this is a local dev server try using 'http://' or pass a constructor with ignoreSsl=true for testing. Inner: {ex.Message}",
+                    $"Failed connecting to '{_urlBase}/{tournamentId}/participants/add'. If this is a local dev server try using 'http://' or pass a constructor with ignoreSsl=true for testing. Inner: {ex.Message}",
                     ex);
             }
             catch (Exception ex)
             {
-                throw new Exception($"Unexpected error adding participants to tournament id '{tournamentId}' at '{_urlBase}/{tournamentId}/participants/add-batch'. Inner: {ex.Message}", ex);
+                throw new Exception($"Unexpected error adding participants to tournament id '{tournamentId}' at '{_urlBase}/{tournamentId}/participants/add'. Inner: {ex.Message}", ex);
             }
         }
 
@@ -307,7 +325,20 @@ namespace BBX_API_WRAPPER.Clients
 
         public Task UpdateMatches(int tournamentId, IEnumerable<Match> matches)
         {
-            throw new NotImplementedException();
+            try
+            {
+                return _jsonTools.PutList<Match>($"/{tournamentId}/matches", matches);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new HttpRequestException(
+                    $"Failed connecting to '{_urlBase}/{tournamentId}/matches'. If this is a local dev server try using 'http://' or pass a constructor with ignoreSsl=true for testing. Inner: {ex.Message}",
+                    ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error updating matches in tournament id '{tournamentId}' at '{_urlBase}/{tournamentId}/matches'. Inner: {ex.Message}", ex);
+            }
         }
 
 
@@ -411,9 +442,9 @@ namespace BBX_API_WRAPPER.Clients
         {
             try
             {
-               await _jsonTools.PostList<TournamentData>($"/{tournamentId}/data/add", tournamentData);
+                await _jsonTools.PostList<TournamentData>($"/{tournamentId}/data/add", tournamentData);
             }
-            catch(HttpRequestException ex)
+            catch (HttpRequestException ex)
             {
                 throw new HttpRequestException(
                     $"Failed connecting to '{_urlBase}/{tournamentId}/data/add'. If this is a local dev server try using 'http://' or pass a constructor with ignoreSsl=true for testing. Inner: {ex.Message}",
@@ -478,6 +509,7 @@ namespace BBX_API_WRAPPER.Clients
                 throw new Exception($"Unexpected error deleting tournament data for playerDbId '{playerDbId}' from tournament id '{tournamentId}' at '{_urlBase}/{tournamentId}/data/player/{playerDbId}'. Inner: {ex.Message}", ex);
             }
 
-        #endregion
+            #endregion
+        }
     }
 }

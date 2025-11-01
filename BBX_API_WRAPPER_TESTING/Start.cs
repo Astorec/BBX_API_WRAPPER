@@ -1,4 +1,4 @@
-using BBX_API_WRAPPER.Clients;
+﻿using BBX_API_WRAPPER.Clients;
 using BBX_API_WRAPPER.Models;
 using System.Text.Json;
 
@@ -47,7 +47,8 @@ namespace BBX_API_WRAPPER
 
             //await GetLeaderboard();
 
-            await AddGetUpdateDeleteNewTournament();
+            //await AddGetUpdateDeleteNewTournament();
+            await RunAllEndpointTests();
 
         }
 
@@ -136,8 +137,8 @@ namespace BBX_API_WRAPPER
 
         public async Task GetPlayerByUsername()
         {
-            Console.WriteLine($"\n--------------------Get Player Astorec---------------------\n");
-            var player = await playerClient.GetPlayerByUsername("Astorec");
+            Console.WriteLine($"\n--------------------Get Player Ross---------------------\n");
+            var player = await playerClient.GetPlayerByUsername("Ross");
             Console.WriteLine($"Player ID: {player.Id} Name: {player.Name} Username: {player.Username}");
         }
 
@@ -262,5 +263,326 @@ namespace BBX_API_WRAPPER
             Console.WriteLine($"\n--------------------Check DB that it was removed then Press Enter to continue---------------------\n");
             Console.ReadLine();
         }
+
+        #region Player Client Tests
+
+        public async Task TestPlayerCRUD()
+        {
+            Console.WriteLine("\n==================== PLAYER CRUD TESTS ====================\n");
+
+            // Create new player
+            Console.WriteLine("--------------------Adding new Player---------------------");
+            var newPlayer = new Player
+            {
+                Name = "Test Player",
+                Username = "testplayer123",
+                Region = 1
+            };
+
+            await playerClient.AddNewPlayer(newPlayer);
+            Console.WriteLine($"Added new player: {newPlayer.Name} ({newPlayer.Username})");
+
+            // Get player by username
+            Console.WriteLine("\n--------------------Get Player by Username---------------------");
+            var retrievedPlayer = await playerClient.GetPlayerByUsername("testplayer123");
+            Console.WriteLine($"Retrieved Player - ID: {retrievedPlayer.Id}, Name: {retrievedPlayer.Name}, Username: {retrievedPlayer.Username}");
+
+            // Update player
+            Console.WriteLine("\n--------------------Updating Player---------------------");
+            retrievedPlayer.Name = "Updated Test Player";
+            retrievedPlayer.Region = 2;
+            await playerClient.UpdatePlayer(retrievedPlayer);
+            Console.WriteLine($"Updated player name to: {retrievedPlayer.Name}");
+
+            // Verify update
+            var updatedPlayer = await playerClient.GetPlayerById(retrievedPlayer.Id);
+            Console.WriteLine($"Verified Update - Name: {updatedPlayer.Name}, Region: {updatedPlayer.Region}");
+
+            Console.WriteLine("\nPress Enter to delete the test player...");
+            Console.ReadLine();
+
+            // Delete player
+            Console.WriteLine("--------------------Deleting Player---------------------");
+            await playerClient.RemovePlayer(retrievedPlayer.Id);
+            Console.WriteLine("Test player deleted.");
+        }
+
+        #endregion
+
+        #region Tournament Participant Tests
+
+        public async Task TestTournamentParticipants()
+        {
+            Console.WriteLine("\n==================== TOURNAMENT PARTICIPANT TESTS ====================\n");
+
+            if (testDataTournament == null)
+            {
+                await GetAllTournaments();
+            }
+
+            Console.WriteLine($"Testing participants for tournament: {testDataTournament.Name} (ID: {testDataTournament.Id})");
+
+            // Get all participants
+            var participants = await tournamentClient.GetAllParticipants(testDataTournament.Id);
+            Console.WriteLine($"\n--------------------Current Participants ({participants.Count()})---------------------");
+            foreach (var p in participants.Take(5)) // Show first 5
+            {
+                Console.WriteLine($"ID: {p.Id}, Player DB ID: {p.PlayerDBId}, Player ID: {p.PlayerId}, Group ID: {p.GroupId}");
+            }
+
+            if (participants.Any())
+            {
+                // Get specific participant
+                var firstParticipant = participants.First();
+                Console.WriteLine($"\n--------------------Get Specific Participant by Player DB ID---------------------");
+                var specificParticipant = await tournamentClient.GetParticipantInTournament(testDataTournament.Id, firstParticipant.PlayerDBId);
+                Console.WriteLine($"Found participant - ID: {specificParticipant.Id}, Player DB ID: {specificParticipant.PlayerDBId}");
+
+                // Update participant
+                Console.WriteLine($"\n--------------------Update Participant---------------------");
+                var originalGroupId = specificParticipant.GroupId;
+                specificParticipant.GroupId = originalGroupId + 1000; // Change to unlikely group ID
+                await tournamentClient.UpdateParticipant(testDataTournament.Id, specificParticipant);
+                Console.WriteLine($"Updated participant group ID from {originalGroupId} to {specificParticipant.GroupId}");
+
+                // Verify update
+                var updatedParticipant = await tournamentClient.GetParticipantInTournament(testDataTournament.Id, specificParticipant.PlayerDBId);
+                Console.WriteLine($"Verified update - Group ID: {updatedParticipant.GroupId}");
+
+                Console.WriteLine("\nPress Enter to revert the participant update...");
+                Console.ReadLine();
+
+                // Revert update
+                updatedParticipant.GroupId = originalGroupId;
+                await tournamentClient.UpdateParticipant(testDataTournament.Id, updatedParticipant);
+                Console.WriteLine($"Reverted participant group ID back to {originalGroupId}");
+            }
+        }
+
+        public async Task TestAddRemoveParticipants()
+        {
+            Console.WriteLine("\n==================== ADD/REMOVE PARTICIPANT TESTS ====================\n");
+
+            if (testDataTournament == null)
+            {
+                await GetAllTournaments();
+            }
+
+            // Get a random player to add as participant
+            var allPlayers = await playerClient.GetAllPlayers();
+            var randomPlayer = allPlayers.Skip(new Random().Next(allPlayers.Count())).First();
+
+            Console.WriteLine($"--------------------Adding Participant to Tournament---------------------");
+            var newParticipant = new Participant
+            {
+                PlayerDBId = randomPlayer.Id,
+                TournamentId = testDataTournament.Id,
+                PlayerId = 999999, // Test player ID
+                GroupId = 888888 // Test group ID
+            };
+
+            await tournamentClient.AddParticipant(testDataTournament.Id, newParticipant);
+            Console.WriteLine($"Added participant - Player: {randomPlayer.Name} to tournament: {testDataTournament.Name}");
+
+            Console.WriteLine("\nPress Enter to remove the test participant...");
+            Console.ReadLine();
+
+            // Remove the participant
+            Console.WriteLine($"--------------------Removing Participant---------------------");
+            await tournamentClient.RemoveParticipantByTournamentAndPlayerId(testDataTournament.Id, randomPlayer.Id);
+            Console.WriteLine("Test participant removed.");
+        }
+
+        #endregion
+
+        #region Tournament Match Tests
+
+        public async Task TestTournamentMatches()
+        {
+            Console.WriteLine("\n==================== TOURNAMENT MATCH TESTS ====================\n");
+
+            if (testDataTournament == null)
+            {
+                await GetAllTournaments();
+            }
+
+            Console.WriteLine($"Testing matches for tournament: {testDataTournament.Name}");
+
+            // Get all matches
+            var matches = await tournamentClient.GetAllMatches(testDataTournament.Id);
+            Console.WriteLine($"\n--------------------Current Matches ({matches.Count()})---------------------");
+            foreach (var m in matches.Take(5)) // Show first 5
+            {
+                Console.WriteLine($"Match ID: {m.Id}, P1: {m.Player1Id}, P2: {m.Player2Id}, Winner: {m.WinnerId}");
+            }
+
+            if (matches.Any())
+            {
+                Console.WriteLine($"\n--------------------Update Match Results---------------------");
+                var testMatches = matches.Take(2).ToList();
+
+                // Store original values for restoration
+                var originalData = testMatches.Select(m => new
+                {
+                    Id = m.Id,
+                    OriginalWinner = m.WinnerId,
+                    OriginalP1Score = m.Player1Score,
+                    OriginalP2Score = m.Player2Score
+                }).ToList();
+
+                // Update match results
+                foreach (var match in testMatches)
+                {
+                    match.WinnerId = match.Player1Id; // Set player 1 as winner
+                    match.Player1Score = 3;
+                    match.Player2Score = 1;
+                }
+
+                await tournamentClient.UpdateMatches(testDataTournament.Id, testMatches);
+                Console.WriteLine($"Updated {testMatches.Count} match results");
+
+                Console.WriteLine("\nPress Enter to revert match updates...");
+                Console.ReadLine();
+
+                // Revert changes
+                for (int i = 0; i < testMatches.Count; i++)
+                {
+                    testMatches[i].WinnerId = originalData[i].OriginalWinner;
+                    testMatches[i].Player1Score = originalData[i].OriginalP1Score;
+                    testMatches[i].Player2Score = originalData[i].OriginalP2Score;
+                }
+
+                await tournamentClient.UpdateMatches(testDataTournament.Id, testMatches);
+                Console.WriteLine("Match results reverted to original state");
+            }
+        }
+
+        #endregion
+
+        #region Tournament Data Tests
+
+        public async Task TestTournamentData()
+        {
+            Console.WriteLine("\n==================== TOURNAMENT DATA TESTS ====================\n");
+
+            if (testDataTournament == null)
+            {
+                await GetAllTournaments();
+            }
+
+            Console.WriteLine($"Testing tournament data for: {testDataTournament.Name}");
+
+            // Get all tournament data
+            var tournamentData = await tournamentClient.GetAllTournamentData(testDataTournament.Id);
+            Console.WriteLine($"\n--------------------Current Tournament Data ({tournamentData.Count()})---------------------");
+
+            Console.WriteLine($"{"Player DB ID",-12} {"Wins",-6} {"Losses",-8} {"Rank",-6} {"Win %",-8} {"Score",-8}");
+            Console.WriteLine(new string('-', 50));
+
+            foreach (var td in tournamentData.Take(10)) // Show first 10
+            {
+                Console.WriteLine($"{td.PlayerDBId,-12} {td.Wins,-6} {td.Losses,-8} {td.Rank,-6} {td.WinPercentage,-8:F1} {td.Score,-8}");
+            }
+
+            if (tournamentData.Any())
+            {
+                // Get tournament data for specific player
+                var firstPlayerData = tournamentData.First();
+                Console.WriteLine($"\n--------------------Get Data for Specific Player (ID: {firstPlayerData.PlayerDBId})---------------------");
+                var playerTournamentData = await tournamentClient.GetTournamentDataForPlayer(testDataTournament.Id, firstPlayerData.PlayerDBId);
+                Console.WriteLine($"Player Data - Wins: {playerTournamentData.Wins}, Losses: {playerTournamentData.Losses}, Rank: {playerTournamentData.Rank}");
+
+                // Get all tournament data for this player across all tournaments
+                var allPlayerData = await tournamentClient.GetTournamentDataForPlayer(firstPlayerData.PlayerDBId);
+                Console.WriteLine($"\n--------------------All Tournament Data for Player {firstPlayerData.PlayerDBId}---------------------");
+                foreach (var data in allPlayerData.Take(5))
+                {
+                    Console.WriteLine($"Tournament {data.TournamentId}: Wins: {data.Wins}, Losses: {data.Losses}, Rank: {data.Rank}");
+                }
+            }
+
+            // Test adding new tournament data
+            Console.WriteLine($"\n--------------------Add Test Tournament Data---------------------");
+            // Get random player to associate with test data
+            var participants = await tournamentClient.GetAllParticipants(testDataTournament.Id);
+            var randomPlayerDbId = participants.ElementAt(new Random().Next(participants.Count())).PlayerDBId;
+
+            var testData = new List<TournamentData>
+            {
+                new TournamentData
+                {
+                    TournamentId = testDataTournament.Id,
+                    PlayerDBId = randomPlayerDbId, // Test player ID
+                    Wins = 5,
+                    Losses = 2,
+                    Rank = 3,
+                    WinPercentage = 71.4,
+                    Score = 150
+                }
+            };
+
+            await tournamentClient.AddTournamentData(testDataTournament.Id, testData);
+            Console.WriteLine("Added test tournament data");
+
+            Console.WriteLine("\nPress Enter to remove test tournament data...");
+            Console.ReadLine();
+
+            // Remove test data
+            await tournamentClient.RemovePlayerTournamentData(testDataTournament.Id, randomPlayerDbId);
+            Console.WriteLine("Test tournament data removed");
+        }
+
+        #endregion
+
+        #region Comprehensive Test Runner
+
+        public async Task RunAllEndpointTests()
+        {
+            Console.WriteLine("\n🚀 STARTING COMPREHENSIVE API ENDPOINT TESTS 🚀\n");
+
+            try
+            {
+                // Tournament tests (already existing)
+                await GetAllTournaments();
+                await GetTournamentById(11);
+                await GetTournamentByUrl("https://worldbeyblade.challonge.com/ij1pgt0i");
+
+                // Player tests
+                await GetAlllPlayer();
+                await GetPlayerByUsername();
+                await TestPlayerCRUD();
+
+                // Leaderboard tests
+                await GetLeaderboard();
+
+                // Participant tests
+                await GetParticipants();
+                await TestTournamentParticipants();
+                await TestAddRemoveParticipants();
+
+                // Match tests
+                await GetMatches();
+                await TestTournamentMatches();
+
+                // Tournament data tests
+                await TestTournamentData();
+
+                // Complex data analysis
+                await GetMatchDataWithNames();
+
+                // CRUD operations
+                await AddGetUpdateDeleteNewTournament();
+
+                Console.WriteLine("\n✅ ALL ENDPOINT TESTS COMPLETED SUCCESSFULLY! ✅");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n❌ TEST FAILED: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+            }
+        }
+
+        #endregion
+
     }
 }

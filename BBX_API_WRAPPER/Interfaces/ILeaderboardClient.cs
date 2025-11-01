@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BBX_API_WRAPPER.Interfaces
 {
-    internal interface ILeaderboardClient
+    public interface ILeaderboardClient
     {
         Task<IEnumerable<Leaderboard>> GetMainBoard();
     }

@@ -12,9 +12,9 @@ namespace BBX_API_WRAPPER.Models
         public string Name { get; set; }
 
         [JsonPropertyName("username")]
-        public string Username { get; set; }
+        public string? Username { get; set; }
 
         [JsonPropertyName("region")]
-        public int Region { get; set; }
+        public int? Region { get; set; }
     }
 }
